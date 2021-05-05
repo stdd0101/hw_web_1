@@ -1,5 +1,7 @@
 package ru.netology.server;
 
+import ru.netology.server.request.Request;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,20 +38,13 @@ public class Server {
     private void processConnection (Socket socket) {
         try (
                 socket;
-                final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                final var in = socket.getInputStream();
                 final var out = new BufferedOutputStream(socket.getOutputStream());
         ) {
-            // read only request line for simplicity
-            // must be in form GET /path HTTP/1.1
-            final var requestLine = in.readLine();
-            final var parts = requestLine.split(" ");
 
-            if (parts.length != 3) {
-                // just close socket
-                return;
-            }
+            var request = Request.fromInputStream(in);
 
-            final var path = parts[1];
+            final var path = request.getPath();
             if (!validPaths.contains(path)) {
                 out.write((
                         "HTTP/1.1 404 Not Found\r\n" +
