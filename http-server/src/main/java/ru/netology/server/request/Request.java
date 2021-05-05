@@ -1,11 +1,17 @@
 package ru.netology.server.request;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Request {
     private final String method;
@@ -36,7 +42,25 @@ public class Request {
         return in;
     }
 
-    public static Request fromInputStream(InputStream inputStream) throws IOException {
+    public static List<NameValuePair> getQueryParams(String url) throws URISyntaxException {
+
+        List<NameValuePair> params = URLEncodedUtils.parse(new URI(url), StandardCharsets.UTF_8);
+
+        for (NameValuePair param : params) {
+            System.out.println(param.getName() + " : " + param.getValue());
+        }
+
+        return params;
+    }
+
+    public static String getQueryParam(List<NameValuePair> params, String name) throws UnsupportedEncodingException
+    {
+        return params
+                .stream()
+                .collect(Collectors.toMap(NameValuePair::getName, NameValuePair::getValue)).get(name);
+    }
+
+    public static Request fromInputStream(InputStream inputStream) throws IOException, URISyntaxException {
         var in = new BufferedReader(new InputStreamReader(inputStream));
 
         // read only request line for simplicity
@@ -50,6 +74,9 @@ public class Request {
         }
         var method = parts[0];
         var path = parts[1];
+
+        var queryList = Request.getQueryParams(path);
+        System.out.println(Request.getQueryParam(queryList, "params"));
 
         var headers = new HashMap<String, String>();
         String line;
